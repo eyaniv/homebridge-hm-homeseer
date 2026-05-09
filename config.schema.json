@@ -1,0 +1,83 @@
+{
+  "pluginAlias": "HomeSeerNG",
+  "pluginType": "platform",
+  "singular": true,
+  "customUiPath": "./homebridge-ui",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Platform Name",
+        "type": "string",
+        "default": "HomeSeerNG",
+        "description": "Internal platform name (leave as default)"
+      },
+      "host": {
+        "title": "HomeSeer Host",
+        "type": "string",
+        "default": "192.168.0.5",
+        "description": "IP address or hostname of your HS4 server"
+      },
+      "port": {
+        "title": "HomeSeer HTTP Port",
+        "type": "integer",
+        "default": 80,
+        "description": "HS4 web server port (usually 80)"
+      },
+      "lanAccess": {
+        "title": "LAN Access Allowed (no login required)",
+        "type": "boolean",
+        "default": true,
+        "description": "If HomeSeer allows unauthenticated access from the local network, enable this. If disabled, username and password are required."
+      },
+      "username": {
+        "title": "HomeSeer Username",
+        "type": "string",
+        "description": "Required if LAN Access is disabled"
+      },
+      "password": {
+        "title": "HomeSeer Password",
+        "type": "string",
+        "description": "Required if LAN Access is disabled"
+      },
+      "asciiPort": {
+        "title": "HS4 ASCII Event Stream Port",
+        "type": "integer",
+        "default": 11000,
+        "description": "Port for the HomeSeer ASCII event stream (default 11000)"
+      },
+      "homebridgeIp": {
+        "title": "Homebridge IP Address",
+        "type": "string",
+        "description": "IP address of this Homebridge server (used to build the Device Selection Page link)"
+      },
+      "uiPort": {
+        "title": "Device Selection UI Port",
+        "type": "integer",
+        "default": 8583,
+        "description": "Port for the device selection page (default 8583)"
+      },
+      "ignoreBattery": {
+        "title": "Ignore Battery Devices",
+        "type": "boolean",
+        "default": true,
+        "description": "Exclude devices identified as battery sensors from HomeKit"
+      }
+    },
+    "required": ["host"]
+  },
+  "layout": [
+    { "key": "host" },
+    { "key": "port" },
+    { "key": "homebridgeIp" },
+    { "key": "lanAccess" },
+    { "key": "username" },
+    { "key": "password" },
+    { "key": "asciiPort" },
+    { "key": "uiPort" },
+    {
+      "type": "help",
+      "helpvalue": "<div style='margin-top:20px;padding:14px;background:#1a1a2e;border-radius:8px;text-align:center;border:2px solid #e94560'><a href='http://192.168.0.8:8583' target='_blank' style='color:#e94560;font-size:1.5em;font-weight:900;text-decoration:underline'>CLICK HERE FOR DEVICE SELECTION PAGE</a></div>"
+    }
+  ]
+}

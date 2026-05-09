@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; }
+    .toolbar { display: flex; gap: 10px; align-items: center; padding: 12px; background: #16213e; border-bottom: 1px solid #0f3460; flex-wrap: wrap; }
+    .toolbar input { flex: 1; min-width: 180px; padding: 6px 10px; border: 1px solid #0f3460; border-radius: 6px; background: #1a1a2e; color: #e0e0e0; font-size: 0.85rem; }
+    .toolbar label { font-size: 0.82rem; color: #aaa; display: flex; align-items: center; gap: 5px; }
+    button { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 500; }
+    .btn-primary { background: #e94560; color: #fff; }
+    .btn-secondary { background: #0f3460; color: #e0e0e0; }
+    #msg { padding: 6px 12px; font-size: 0.82rem; min-height: 28px; }
+    #msg.ok { color: #4caf50; } #msg.err { color: #e94560; }
+    #statusBar { padding: 6px 12px; font-size: 0.78rem; color: #888; background: #111827; }
+    #statusBar span { color: #e94560; font-weight: 600; }
+    .table-wrap { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead { position: sticky; top: 0; background: #16213e; z-index: 10; }
+    th { padding: 8px 10px; text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #0f3460; }
+    td { padding: 7px 10px; border-bottom: 1px solid #1e2a3a; vertical-align: middle; }
+    tr:hover td { background: #1e2a3a; }
+    tr.enabled td { background: rgba(233,69,96,0.06); }
+    .cb { width: 15px; height: 15px; cursor: pointer; accent-color: #e94560; }
+    select { background: #1a1a2e; color: #e0e0e0; border: 1px solid #0f3460; border-radius: 4px; padding: 2px 5px; font-size: 0.78rem; }
+    .loc { color: #666; font-size: 0.76rem; }
+    .val { color: #7eb8f7; font-size: 0.78rem; display: inline-block; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+    .vc { color: #a8d8a8; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+
+<div style="padding:12px;background:#16213e;border-bottom:1px solid #0f3460;text-align:center;">
+  <a id="devLink" href="#" target="_blank" style="color:red;font-weight:900;font-size:2em;text-decoration:underline;">CLICK HERE to open Device Selection Page</a>
+</div>
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Search..." oninput="filterTable()">
+  <label><input type="checkbox" id="showEn" onchange="filterTable()" checked> Enabled</label>
+  <label><input type="checkbox" id="showDis" onchange="filterTable()" checked> Disabled</label>
+  <button class="btn-secondary" onclick="refresh()">Refresh</button>
+  <button class="btn-secondary" onclick="populateVoiceCommands()">Populate Voice Commands</button>
+  <button class="btn-primary" onclick="saveAll()">Save</button>
+</div>
+<div id="msg"></div>
+<div id="statusBar">Loading...</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th><input type="checkbox" id="selAll" onchange="toggleAll(this)"></th>
+      <th>Name</th>
+      <th>Siri Name</th>
+      <th>Location</th>
+      <th>Value</th>
+      <th>HS4 Type</th>
+      <th>HomeKit Type</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>

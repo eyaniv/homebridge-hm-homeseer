@@ -1,0 +1,31 @@
+{
+  "name": "homebridge-hm-homeseer",
+  "displayName": "HM HomeSeer Plugin for Homebridge",
+  "version": "1.0.1",
+  "description": "HM HomeSeer Plugin for Homebridge — auto-discovery of HS4 devices, real-time updates via ASCII event stream, web UI for device selection",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "homebridge": ">=1.6.0"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "homeseer",
+    "hs4",
+    "homeseer4",
+    "home-automation",
+    "hm-consulting"
+  ],
+  "author": {
+    "name": "HM Consulting Services",
+    "url": "https://www.npmjs.com/~wpiman2"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "homebridge": "^1.8.0"
+  }
+}

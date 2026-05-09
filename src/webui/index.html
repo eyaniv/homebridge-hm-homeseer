@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeSeer NG – Device Selection</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; min-height: 100vh; }
+    header { background: #16213e; padding: 16px 24px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #0f3460; }
+    header h1 { font-size: 1.3rem; font-weight: 600; color: #e94560; }
+    header .sub { font-size: 0.85rem; color: #888; }
+    .toolbar { display: flex; gap: 10px; align-items: center; padding: 14px 24px; background: #16213e; border-bottom: 1px solid #0f3460; flex-wrap: wrap; }
+    .toolbar input[type=text] { flex: 1; min-width: 200px; padding: 7px 12px; border: 1px solid #0f3460; border-radius: 6px; background: #1a1a2e; color: #e0e0e0; font-size: 0.9rem; }
+    .toolbar label { font-size: 0.85rem; color: #aaa; display: flex; align-items: center; gap: 6px; }
+    button { padding: 7px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: opacity 0.15s; }
+    button:hover { opacity: 0.85; }
+    .btn-primary { background: #e94560; color: #fff; }
+    .btn-secondary { background: #0f3460; color: #e0e0e0; }
+    .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+    .status-bar { padding: 8px 24px; font-size: 0.8rem; color: #888; background: #111827; }
+    .status-bar span { color: #e94560; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead { position: sticky; top: 0; background: #16213e; z-index: 10; }
+    th { padding: 10px 12px; text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #0f3460; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { color: #e0e0e0; }
+    th.sort-asc::after { content: ' ▲'; color: #e94560; }
+    th.sort-desc::after { content: ' ▼'; color: #e94560; }
+    td { padding: 9px 12px; border-bottom: 1px solid #1e2a3a; vertical-align: middle; }
+    tr:hover td { background: #1e2a3a; }
+    tr.enabled td { background: rgba(233,69,96,0.06); }
+    tr.enabled:hover td { background: rgba(233,69,96,0.12); }
+    .table-wrap { overflow-x: auto; max-height: calc(100vh - 200px); overflow-y: auto; }
+    .cb { width: 16px; height: 16px; cursor: pointer; accent-color: #e94560; }
+    select { background: #1a1a2e; color: #e0e0e0; border: 1px solid #0f3460; border-radius: 4px; padding: 3px 6px; font-size: 0.82rem; }
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+    .tag-auto { background: #0f3460; color: #7eb8f7; }
+    .tag-custom { background: #3a1a2e; color: #f78; }
+    .loc { color: #666; font-size: 0.8rem; }
+    .val { color: #7eb8f7; font-size: 0.82rem; display: inline-block; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+    .save-banner { display: none; position: fixed; bottom: 20px; right: 24px; background: #e94560; color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 100; gap: 12px; align-items: center; }
+    .save-banner.visible { display: flex; }
+    #msg { padding: 10px 24px; font-size: 0.85rem; min-height: 36px; }
+    #msg.ok { color: #4caf50; }
+    #msg.err { color: #e94560; }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>HomeSeer NG</h1>
+    <div class="sub">Select devices to expose to HomeKit</div>
+  </div>
+  <div style="margin-left:auto; display:flex; gap:8px;">
+    <button class="btn-secondary" onclick="refresh()">Refresh Devices</button>
+    <button class="btn-secondary" onclick="populateVoiceCommands()">Add All Voice Command Devices</button>
+    <button class="btn-secondary" onclick="reapplyAutoDetect()">Re-apply Auto-detect Types</button>
+    <button class="btn-primary" onclick="saveAll()">Save</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Search name, location, type..." oninput="filterTable()">
+  <label><input type="checkbox" id="showEnabled" onchange="filterTable()" checked> Show enabled</label>
+  <label><input type="checkbox" id="showDisabled" onchange="filterTable()" checked> Show disabled</label>
+  <label><input type="checkbox" id="hideBattery" onchange="filterTable()"> Hide battery</label>
+</div>
+
+<div id="msg"></div>
+<div class="status-bar" id="statusBar">Loading...</div>
+
+<div class="table-wrap">
+<table id="devTable">
+  <thead>
+    <tr>
+      <th><input type="checkbox" id="selectAll" onchange="toggleAll(this)" title="Select all visible"></th>
+      <th class="sortable" onclick="sortBy('name')">Name</th>
+      <th>Siri Name <span style="font-weight:normal;color:#555">(voice cmd)</span></th>
+      <th class="sortable" onclick="sortBy('location')">Location</th>
+      <th>Value</th>
+      <th class="sortable" onclick="sortBy('deviceType')">HS Type</th>
+      <th class="sortable" onclick="sortBy('type')">HomeKit Type</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+
+<div class="save-banner" id="saveBanner">
+  <span>Unsaved changes</span>
+  <button class="btn-primary btn-sm" onclick="saveAll()">Save Now</button>
+</div>
+
+<script>
+const TYPES = [
+  'switch','lightbulb','fan','garage','lock','thermostat',
+  'temperature','humidity','motion','contact','smoke','co','leak','lightsensor','battery'
+];
+
+let allDevices = [];
+let dirty = false;
+let sortCol = 'type';
+let sortDir = 1;
+
+function sortBy(col) {
+  if (sortCol === col) { sortDir *= -1; } else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('sort-asc','sort-desc'));
+  const idx = ['name','location','deviceType','type'].indexOf(col);
+  const ths = document.querySelectorAll('th.sortable');
+  if (ths[idx]) ths[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  renderTable();
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/devices');
+    allDevices = await res.json();
+    renderTable();
+    const cfg = await (await fetch('/api/config')).json();
+    document.getElementById('statusBar').innerHTML =
+      `Connected to <span>${cfg.hsHost}:${cfg.hsPort}</span> &nbsp;|&nbsp; ` +
+      `<span>${cfg.deviceCount}</span> devices found &nbsp;|&nbsp; ` +
+      `<span>${cfg.selectedCount}</span> enabled in HomeKit`;
+  } catch(e) {
+    document.getElementById('statusBar').textContent = 'Error loading devices: ' + e.message;
+  }
+}
+
+function renderTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const showEn = document.getElementById('showEnabled').checked;
+  const showDis = document.getElementById('showDisabled').checked;
+  const hideBat = document.getElementById('hideBattery').checked;
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  const filtered = allDevices.filter(d => {
+    if (d.enabled && !showEn) return false;
+    if (!d.enabled && !showDis) return false;
+    if (hideBat && (d.autoType === 'battery' || d.type === 'battery')) return false;
+    if (q) {
+      const hay = `${d.name} ${d.voiceCommand} ${d.location} ${d.location2} ${d.deviceType} ${d.type}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    const av = (sortCol === 'location' ? `${a.location2}/${a.location}` : (a[sortCol] || '')).toLowerCase();
+    const bv = (sortCol === 'location' ? `${b.location2}/${b.location}` : (b[sortCol] || '')).toLowerCase();
+    return av.localeCompare(bv) * sortDir;
+  });
+
+  for (const d of filtered) {
+    const tr = document.createElement('tr');
+    if (d.enabled) tr.className = 'enabled';
+    tr.dataset.ref = d.ref;
+
+    const isCustom = d.enabled && d.type !== d.autoType;
+    const typeTag = isCustom
+      ? `<span class="tag tag-custom">custom</span>`
+      : `<span class="tag tag-auto">auto</span>`;
+
+    tr.innerHTML = `
+      <td><input class="cb" type="checkbox" ${d.enabled ? 'checked' : ''} onchange="toggleDevice(${d.ref}, this)"></td>
+      <td><strong>${esc(d.name)}</strong></td>
+      <td>${d.voiceCommand ? `<span style="color:#a8d8a8;font-size:0.85rem">${esc(d.voiceCommand)}</span>` : `<span style="color:#444;font-size:0.78rem">—</span>`}</td>
+      <td><span class="loc">${esc(d.location2)}${d.location2 && d.location ? ' / ' : ''}${esc(d.location)}</span></td>
+      <td><span class="val">${esc(d.valueString || String(d.value))}</span></td>
+      <td><span style="color:#999;font-size:0.8rem">${esc(d.deviceType)}</span></td>
+      <td>
+        <select onchange="changeType(${d.ref}, this.value)">
+          ${TYPES.map(t => `<option value="${t}" ${(d.type||'switch') === t ? 'selected' : ''}>${t}</option>`).join('')}
+        </select>
+        ${typeTag}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById('statusBar').innerHTML =
+    (document.getElementById('statusBar').innerHTML.split('|')[0] || '') +
+    ` | Showing <span>${filtered.length}</span> of <span>${allDevices.length}</span>`;
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleDevice(ref, cb) {
+  const d = allDevices.find(x => x.ref === ref);
+  if (!d) return;
+  d.enabled = cb.checked;
+  const tr = cb.closest('tr');
+  tr.className = d.enabled ? 'enabled' : '';
+  markDirty();
+}
+
+function changeType(ref, type) {
+  const d = allDevices.find(x => x.ref === ref);
+  if (!d) return;
+  d.type = type;
+  markDirty();
+}
+
+function toggleAll(masterCb) {
+  const rows = document.querySelectorAll('#tbody tr');
+  rows.forEach(tr => {
+    const ref = parseInt(tr.dataset.ref);
+    const cb = tr.querySelector('input[type=checkbox]');
+    if (cb) {
+      cb.checked = masterCb.checked;
+      const d = allDevices.find(x => x.ref === ref);
+      if (d) {
+        d.enabled = masterCb.checked;
+        tr.className = d.enabled ? 'enabled' : '';
+      }
+    }
+  });
+  markDirty();
+}
+
+function filterTable() { renderTable(); }
+
+function reapplyAutoDetect() {
+  let count = 0;
+  for (const d of allDevices) {
+    if (d.type !== d.autoType) {
+      d.type = d.autoType;
+      count++;
+    }
+  }
+  renderTable();
+  markDirty();
+  showMsg('Reset ' + count + ' device(s) to auto-detected type — review and click Save', 'ok');
+}
+
+function populateVoiceCommands() {
+  let count = 0;
+  for (const d of allDevices) {
+    if (d.voiceCommand && !d.enabled) {
+      d.enabled = true;
+      count++;
+    }
+  }
+  renderTable();
+  markDirty();
+  showMsg('Enabled ' + count + ' device(s) with voice commands — click Save to apply', 'ok');
+}
+
+function markDirty() {
+  dirty = true;
+  document.getElementById('saveBanner').className = 'save-banner visible';
+}
+
+async function saveAll() {
+  const payload = allDevices.map(d => ({ ref: d.ref, enabled: d.enabled, type: d.type }));
+  try {
+    const res = await fetch('/api/devices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ devices: payload }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showMsg(`Saved — ${data.count} device(s) enabled in HomeKit`, 'ok');
+      dirty = false;
+      document.getElementById('saveBanner').className = 'save-banner';
+    } else {
+      showMsg('Error: ' + (data.error || 'unknown'), 'err');
+    }
+  } catch(e) {
+    showMsg('Save failed: ' + e.message, 'err');
+  }
+}
+
+async function refresh() {
+  showMsg('Refreshing device list...', '');
+  try {
+    await fetch('/api/refresh', { method: 'POST' });
+    await load();
+    showMsg('Device list refreshed.', 'ok');
+  } catch(e) {
+    showMsg('Refresh failed: ' + e.message, 'err');
+  }
+}
+
+function showMsg(text, cls) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = cls;
+  setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
+}
+
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>
