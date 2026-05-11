@@ -17,13 +17,13 @@ function startWebServer(platform, port) {
     res.sendFile(path.join(__dirname, 'index.html'));
   });
 
-  // GET /api/devices — return devices that have a voice command (auto-enabled)
+  // GET /api/devices — return all devices; mark enabled if in overrides or has voice command
   app.get('/api/devices', (req, res) => {
     const devices = [];
     for (const [ref, device] of platform.deviceCache) {
-      if (!device.voice_command || !device.voice_command.trim()) continue;
       const typeOverride = platform.typeOverrides.get(ref);
       const autoType = platform.autoDetect(device);
+      const hasVoice = !!(device.voice_command && device.voice_command.trim());
       devices.push({
         ref,
         name: device.name,
@@ -33,7 +33,7 @@ function startWebServer(platform, port) {
         value: device.value,
         valueString: device.value_string || device.status || '',
         deviceType: device.device_type_string || '',
-        enabled: true,
+        enabled: !!typeOverride || hasVoice,
         type: typeOverride || autoType,
         autoType,
       });
@@ -46,12 +46,14 @@ function startWebServer(platform, port) {
     res.json(devices);
   });
 
-  // POST /api/devices — save type overrides
-  // Body: { devices: [{ ref, type }, ...] }
+  // POST /api/devices — save enabled devices with their types
+  // Body: { devices: [{ ref, type, enabled }, ...] }
   app.post('/api/devices', (req, res) => {
     const { devices } = req.body;
     if (!Array.isArray(devices)) return res.status(400).json({ error: 'Expected devices array' });
-    const overrides = devices.map(d => ({ ref: d.ref, type: d.type }));
+    const overrides = devices
+      .filter(d => d.enabled)
+      .map(d => ({ ref: d.ref, type: d.type }));
     platform.saveTypeOverrides(overrides);
     res.json({ ok: true, count: overrides.length });
   });

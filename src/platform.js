@@ -12,6 +12,7 @@ const { createFanAccessory } = require('./accessories/fan');
 const { createGarageAccessory } = require('./accessories/garage');
 const { createLockAccessory } = require('./accessories/lock');
 const { createSensorAccessory } = require('./accessories/sensors');
+const { createThermostatAccessory } = require('./accessories/thermostat');
 
 const PLUGIN_NAME   = 'homebridge-hm-homeseer';
 const PLATFORM_NAME = 'HomeSeerNG';
@@ -98,12 +99,14 @@ class HomeSeerNGPlatform {
     const wantedUuids   = new Set();
 
     for (const [ref, device] of this.deviceCache) {
-      if (!device.voice_command || !device.voice_command.trim()) continue;
+      const hasVoice = device.voice_command && device.voice_command.trim();
+      const inOverrides = this.typeOverrides.has(ref);
+      if (!hasVoice && !inOverrides) continue;
       if (ignoreBattery && isBattery(device)) continue;
 
       const type        = this.typeOverrides.get(ref) || autoDetectType(device);
       const uuid        = this.api.hap.uuid.generate(`HomeSeerNG:${ref}`);
-      const displayName = device.voice_command.trim();
+      const displayName = (hasVoice ? device.voice_command.trim() : device.name) || `Device ${ref}`;
       wantedUuids.add(uuid);
 
       let accessory = this.accessories.get(uuid);
@@ -159,6 +162,7 @@ class HomeSeerNGPlatform {
       case 'fan':       createFanAccessory(this, accessory, device);         break;
       case 'garage':    createGarageAccessory(this, accessory, device);      break;
       case 'lock':      createLockAccessory(this, accessory, device);        break;
+      case 'thermostat': createThermostatAccessory(this, accessory, device); break;
       default:          createSensorAccessory(this, accessory, device, type); break;
     }
   }
