@@ -4,19 +4,20 @@ function createLockAccessory(platform, accessory, device) {
   const { Service, Characteristic } = platform.api.hap;
   const ref = device.ref;
   const { LockCurrentState, LockTargetState } = Characteristic;
+  const cv = platform.controlValues.get(ref) || {};
+  const lockVal = cv.lockValue != null ? cv.lockValue : 255;
+  const unlockVal = cv.unlockValue != null ? cv.unlockValue : 0;
 
   let service = accessory.getService(Service.LockMechanism);
   if (!service) service = accessory.addService(Service.LockMechanism, accessory.displayName);
 
-  // Use value_string ("Locked"/"Unlocked") from HS4 — more reliable than raw value
-  // since Z-Wave locks use varying conventions (0/255, 255/0, etc.)
   const isLocked = (vs, value) => {
     if (vs) {
       const s = vs.toLowerCase();
       if (s.includes('unlock')) return false;
       if (s.includes('lock')) return true;
     }
-    return value === 255; // fallback: HS4 255=locked, 0=unlocked
+    return value === lockVal;
   };
 
   service.getCharacteristic(LockCurrentState)
@@ -35,8 +36,7 @@ function createLockAccessory(platform, accessory, device) {
         ? LockTargetState.SECURED : LockTargetState.UNSECURED;
     })
     .onSet(async (value) => {
-      // HS4: 255=locked, 0=unlocked
-      await platform.hs.controlDeviceByValue(ref, value === LockTargetState.SECURED ? 255 : 0);
+      await platform.hs.controlDeviceByValue(ref, value === LockTargetState.SECURED ? lockVal : unlockVal);
     });
 
   platform.hs.onValueChange(ref, async () => {

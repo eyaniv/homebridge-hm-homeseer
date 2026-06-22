@@ -116,9 +116,10 @@ class HsApi {
         const value = parseFloat(parts[2]);
         if (isNaN(ref) || isNaN(value)) continue;
         onUpdate(ref, value, '');
-        // Notify registered callbacks
         const cbs = this._valueCallbacks.get(ref);
-        if (cbs) cbs.forEach(cb => cb(value, ''));
+        if (cbs) {
+          setImmediate(() => cbs.forEach(cb => cb(value, '')));
+        }
       }
     });
 

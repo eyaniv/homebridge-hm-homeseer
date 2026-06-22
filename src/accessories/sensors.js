@@ -1,5 +1,7 @@
 'use strict';
 
+const toC = (f) => Math.round((f - 32) * 5 / 9 * 10) / 10;
+
 function createSensorAccessory(platform, accessory, device, type) {
   const { Service, Characteristic } = platform.api.hap;
   const ref = device.ref;
@@ -12,11 +14,11 @@ function createSensorAccessory(platform, accessory, device, type) {
                 accessory.addService(Service.TemperatureSensor, accessory.displayName);
       characteristic = Characteristic.CurrentTemperature;
       platform.hs.onValueChange(ref, (value) => {
-        service.updateCharacteristic(characteristic, value);
+        service.updateCharacteristic(characteristic, toC(value));
       });
       service.getCharacteristic(characteristic).onGet(async () => {
         const d = platform.deviceCache.get(ref);
-        return d ? d.value : 20;
+        return d ? toC(d.value) : 20;
       });
       break;
 
@@ -139,6 +141,21 @@ function createSensorAccessory(platform, accessory, device, type) {
       service.getCharacteristic(characteristic).onGet(async () => {
         const d = platform.deviceCache.get(ref);
         return d ? Math.max(0.0001, d.value) : 0.0001;
+      });
+      break;
+
+    case 'number':
+      service = accessory.getService(Service.LightSensor) ||
+                accessory.addService(Service.LightSensor, accessory.displayName);
+      characteristic = Characteristic.CurrentAmbientLightLevel;
+      service.getCharacteristic(characteristic)
+        .setProps({ minValue: 0, maxValue: 100000 });
+      platform.hs.onValueChange(ref, (value) => {
+        service.updateCharacteristic(characteristic, Math.max(0, value));
+      });
+      service.getCharacteristic(characteristic).onGet(async () => {
+        const d = platform.deviceCache.get(ref);
+        return d ? Math.max(0, d.value) : 0;
       });
       break;
 

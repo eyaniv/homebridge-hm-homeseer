@@ -24,6 +24,7 @@ function startWebServer(platform, port) {
       const typeOverride = platform.typeOverrides.get(ref);
       const autoType = platform.autoDetect(device);
       const hasVoice = !!(device.voice_command && device.voice_command.trim());
+      const isDisabled = platform.disabledRefs.has(ref);
       devices.push({
         ref,
         name: device.name,
@@ -33,7 +34,7 @@ function startWebServer(platform, port) {
         value: device.value,
         valueString: device.value_string || device.status || '',
         deviceType: device.device_type_string || '',
-        enabled: !!typeOverride || hasVoice,
+        enabled: !!typeOverride || (hasVoice && !isDisabled),
         type: typeOverride || autoType,
         autoType,
       });
@@ -46,16 +47,25 @@ function startWebServer(platform, port) {
     res.json(devices);
   });
 
-  // POST /api/devices — save enabled devices with their types
+  // POST /api/devices — save enabled devices and explicitly disabled voice devices
   // Body: { devices: [{ ref, type, enabled }, ...] }
   app.post('/api/devices', (req, res) => {
     const { devices } = req.body;
     if (!Array.isArray(devices)) return res.status(400).json({ error: 'Expected devices array' });
-    const overrides = devices
-      .filter(d => d.enabled)
-      .map(d => ({ ref: d.ref, type: d.type }));
-    platform.saveTypeOverrides(overrides);
-    res.json({ ok: true, count: overrides.length });
+    const toSave = [];
+    for (const d of devices) {
+      if (d.enabled) {
+        toSave.push({ ref: d.ref, type: d.type });
+      } else {
+        const cached = platform.deviceCache.get(d.ref);
+        if (cached && cached.voice_command && cached.voice_command.trim()) {
+          toSave.push({ ref: d.ref, type: d.type, enabled: false });
+        }
+      }
+    }
+    platform.saveTypeOverrides(toSave);
+    const enabledCount = toSave.filter(d => d.enabled !== false).length;
+    res.json({ ok: true, count: enabledCount });
   });
 
   // GET /api/config — current plugin config

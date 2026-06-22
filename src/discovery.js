@@ -35,12 +35,14 @@ const TYPE_SMOKE       = 'smoke';
 const TYPE_CO          = 'co';
 const TYPE_LEAK        = 'leak';
 const TYPE_LIGHT       = 'lightsensor';
+const TYPE_VALVE       = 'valve';
+const TYPE_SECURITY    = 'security';
 const TYPE_BATTERY     = 'battery';
 
 const ALL_TYPES = [
   TYPE_SWITCH, TYPE_LIGHTBULB, TYPE_FAN, TYPE_GARAGE, TYPE_LOCK,
   TYPE_THERMOSTAT, TYPE_TEMP, TYPE_HUMIDITY, TYPE_MOTION, TYPE_CONTACT,
-  TYPE_SMOKE, TYPE_CO, TYPE_LEAK, TYPE_LIGHT, TYPE_BATTERY,
+  TYPE_SMOKE, TYPE_CO, TYPE_LEAK, TYPE_LIGHT, TYPE_VALVE, TYPE_SECURITY, TYPE_BATTERY,
 ];
 
 function autoDetectType(device) {
@@ -58,17 +60,23 @@ function autoDetectType(device) {
   if (/zhaCO|carbon.mono|co.sensor|co.detect/i.test(dts))               return TYPE_CO;
   if (/zhaWater|zhaLeak|zhaFlood|water.sensor|leak.sensor/i.test(dts))  return TYPE_LEAK;
   if (/zhaLux|zhaIllum|zhaLight.Level|lux.sensor|light.sensor/i.test(dts)) return TYPE_LIGHT;
-  if (/zhaDimmer|zhaBulb|zhaBrightness|dimm|dimmable|multilevel/i.test(dts)) return TYPE_LIGHTBULB;
-  if (/zhaFan|fan.control/i.test(dts))                                  return TYPE_FAN;
+  if (/zhaDimmer|zhaBulb|zhaBrightness|dimm|dimmable|multilevel.switch|switch.multilevel/i.test(dts)) return TYPE_LIGHTBULB;
+  if (/zhaFan|fan.control|bond\.power|bond\.fan/i.test(dts))             return TYPE_FAN;
   if (/zhaBattery|battery.sensor/i.test(dts))                           return TYPE_BATTERY;
   if (/thermostat|zhaTherm/i.test(dts))                                 return TYPE_THERMOSTAT;
+  if (/ecobee|honeywell/i.test(dts + ' ' + loc) && !/temperature|humidity|occupancy|in use|fan|mode|status|setpoint|program|outdoor|battery|sensor/i.test(name)) return TYPE_THERMOSTAT;
+  if (/alarm|security.panel|security.system|partition/i.test(dts))        return TYPE_SECURITY;
+  if (/\bvalve\b|water.valve|shutoff|shut.off/i.test(dts))               return TYPE_VALVE;
   if (/garage.door|garage.opener/i.test(dts))                           return TYPE_GARAGE;
   if (/\block\b|deadbolt|lock.mech/i.test(dts))                         return TYPE_LOCK;
+  if (/\bvalve\b|water.valve|shutoff|shut.off/i.test(name))             return TYPE_VALVE;
   if (/zhaSwitch|binary.switch|relay|outlet|plug/i.test(dts))           return TYPE_SWITCH;
 
   // --- name / location fallback ---
   if (/therm/i.test(text))                                              return TYPE_THERMOSTAT;
   if (/garage.door|garage.opener/i.test(text))                          return TYPE_GARAGE;
+  if (/\balarm\b|security.system|security.panel|\bpartition\b/i.test(text) && !/smoke|co|carbon|fire/i.test(text)) return TYPE_SECURITY;
+  if (/\bvalve\b|water.valve|shutoff|shut.off/i.test(text))              return TYPE_VALVE;
   if (/\block\b|deadbolt/i.test(text))                                  return TYPE_LOCK;
   if (/smoke/i.test(text))                                              return TYPE_SMOKE;
   if (/carbon.mono|co.detect/i.test(text))                              return TYPE_CO;
@@ -93,4 +101,4 @@ function isBattery(device) {
 
 module.exports = { autoDetectType, isBattery, ALL_TYPES, TYPE_SWITCH, TYPE_LIGHTBULB,
   TYPE_FAN, TYPE_GARAGE, TYPE_LOCK, TYPE_THERMOSTAT, TYPE_TEMP, TYPE_HUMIDITY,
-  TYPE_MOTION, TYPE_CONTACT, TYPE_SMOKE, TYPE_CO, TYPE_LEAK, TYPE_LIGHT, TYPE_BATTERY };
+  TYPE_MOTION, TYPE_CONTACT, TYPE_SMOKE, TYPE_CO, TYPE_LEAK, TYPE_LIGHT, TYPE_VALVE, TYPE_SECURITY, TYPE_BATTERY };

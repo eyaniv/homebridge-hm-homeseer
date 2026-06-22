@@ -38,9 +38,12 @@ module.exports = (api) => {
     const data = await hsRequest(host, port, `/JSON?request=getstatus&JSON=1${auth}`);
     const hsDevices = data.Devices || data || [];
 
+    const disabledRefs = new Set(selected.filter(s => s.enabled === false).map(s => s.ref));
+    const enabledRefs = new Map(selected.filter(s => s.enabled !== false).map(s => [s.ref, s.type]));
+
     const devices = hsDevices.map(d => {
-      const sel = selected.find(s => s.ref === d.ref);
       const hasVoice = !!(d.voice_command && d.voice_command.trim());
+      const isEnabled = enabledRefs.has(d.ref) || (hasVoice && !disabledRefs.has(d.ref));
       return {
         ref: d.ref,
         name: d.name,
@@ -50,8 +53,8 @@ module.exports = (api) => {
         value: d.value,
         valueString: d.value_string || d.status || '',
         deviceType: d.device_type_string || '',
-        enabled: sel ? true : false,
-        type: sel ? sel.type : autoDetect(d),
+        enabled: isEnabled,
+        type: enabledRefs.get(d.ref) || autoDetect(d),
         autoType: autoDetect(d),
       };
     });
@@ -68,9 +71,17 @@ module.exports = (api) => {
     try {
       const devicesFile = path.join('/homebridge', 'homeseer-ng-devices.json');
       const devices = Array.isArray(body) ? body : (body.devices || []);
-      const selected = devices.filter(d => d.enabled).map(d => ({ ref: d.ref, type: d.type }));
-      fs.writeFileSync(devicesFile, JSON.stringify(selected, null, 2));
-      return { ok: true, count: selected.length };
+      const toSave = [];
+      for (const d of devices) {
+        if (d.enabled) {
+          toSave.push({ ref: d.ref, type: d.type });
+        } else if (d.voiceCommand) {
+          toSave.push({ ref: d.ref, type: d.type, enabled: false });
+        }
+      }
+      fs.writeFileSync(devicesFile, JSON.stringify(toSave, null, 2));
+      const enabledCount = toSave.filter(d => d.enabled !== false).length;
+      return { ok: true, count: enabledCount };
     } catch(e) {
       return { ok: false, error: e.message };
     }

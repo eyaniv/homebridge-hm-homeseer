@@ -77,7 +77,7 @@
     { "key": "uiPort" },
     {
       "type": "help",
-      "helpvalue": "<div style='margin-top:20px;padding:14px;background:#1a1a2e;border-radius:8px;text-align:center;border:2px solid #e94560'><a href='http://192.168.0.8:8583' target='_blank' style='color:#e94560;font-size:1.5em;font-weight:900;text-decoration:underline'>CLICK HERE FOR DEVICE SELECTION PAGE</a></div>"
+      "helpvalue": "<div style='margin-top:20px;padding:14px;background:#1a1a2e;border-radius:8px;text-align:center;border:2px solid #e94560'><a id='hsng-cfg-link' href='http://localhost:8583' target='_blank' style='color:#e94560;font-size:1.5em;font-weight:900;text-decoration:underline'>OPEN DEVICE SELECTION PAGE</a><br><span style='color:#666;font-size:0.85em;margin-top:6px;display:inline-block'>Replace &quot;localhost&quot; with your Homebridge IP if needed</span></div>"
     }
   ]
 }

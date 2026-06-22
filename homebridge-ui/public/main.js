@@ -1,5 +1,5 @@
-const TYPES = ['switch','lightbulb','fan','garage','lock','thermostat',
-  'temperature','humidity','motion','contact','smoke','co','leak','lightsensor','battery'];
+const TYPES = ['switch','lightbulb','lightbulb-nodim','fan','garage','lock','valve','security','thermostat',
+  'temperature','humidity','motion','contact','smoke','co','leak','lightsensor','number','battery'];
 
 let allDevices = [];
 
@@ -38,6 +38,7 @@ function renderTable() {
     tr.dataset.ref = d.ref;
     tr.innerHTML =
       '<td><input class="cb" type="checkbox"' + (d.enabled ? ' checked' : '') + ' onchange="toggle(' + d.ref + ',this)"></td>' +
+      '<td style="color:#888;font-size:0.78rem">' + d.ref + '</td>' +
       '<td><strong>' + esc(d.name) + '</strong></td>' +
       '<td>' + (d.voiceCommand ? '<span class="vc">' + esc(d.voiceCommand) + '</span>' : '<span style="color:#444">—</span>') + '</td>' +
       '<td><span class="loc">' + esc([d.location2, d.location].filter(Boolean).join(' / ')) + '</span></td>' +

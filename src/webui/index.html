@@ -75,6 +75,7 @@
   <thead>
     <tr>
       <th><input type="checkbox" id="selectAll" onchange="toggleAll(this)" title="Select all visible"></th>
+      <th class="sortable" onclick="sortBy('ref')">Ref</th>
       <th class="sortable" onclick="sortBy('name')">Name</th>
       <th>Siri Name <span style="font-weight:normal;color:#555">(voice cmd)</span></th>
       <th class="sortable" onclick="sortBy('location')">Location</th>
@@ -94,8 +95,8 @@
 
 <script>
 const TYPES = [
-  'switch','lightbulb','fan','garage','lock','thermostat',
-  'temperature','humidity','motion','contact','smoke','co','leak','lightsensor','battery'
+  'switch','lightbulb','lightbulb-nodim','fan','garage','lock','valve','security','thermostat',
+  'temperature','humidity','motion','contact','smoke','co','leak','lightsensor','number','battery'
 ];
 
 let allDevices = [];
@@ -106,7 +107,7 @@ let sortDir = 1;
 function sortBy(col) {
   if (sortCol === col) { sortDir *= -1; } else { sortCol = col; sortDir = 1; }
   document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('sort-asc','sort-desc'));
-  const idx = ['name','location','deviceType','type'].indexOf(col);
+  const idx = ['ref','name','location','deviceType','type'].indexOf(col);
   const ths = document.querySelectorAll('th.sortable');
   if (ths[idx]) ths[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
   renderTable();
@@ -148,6 +149,7 @@ function renderTable() {
   });
 
   filtered.sort((a, b) => {
+    if (sortCol === 'ref') return (a.ref - b.ref) * sortDir;
     const av = (sortCol === 'location' ? `${a.location2}/${a.location}` : (a[sortCol] || '')).toLowerCase();
     const bv = (sortCol === 'location' ? `${b.location2}/${b.location}` : (b[sortCol] || '')).toLowerCase();
     return av.localeCompare(bv) * sortDir;
@@ -165,6 +167,7 @@ function renderTable() {
 
     tr.innerHTML = `
       <td><input class="cb" type="checkbox" ${d.enabled ? 'checked' : ''} onchange="toggleDevice(${d.ref}, this)"></td>
+      <td style="color:#888;font-size:0.8rem">${d.ref}</td>
       <td><strong>${esc(d.name)}</strong></td>
       <td>${d.voiceCommand ? `<span style="color:#a8d8a8;font-size:0.85rem">${esc(d.voiceCommand)}</span>` : `<span style="color:#444;font-size:0.78rem">—</span>`}</td>
       <td><span class="loc">${esc(d.location2)}${d.location2 && d.location ? ' / ' : ''}${esc(d.location)}</span></td>
@@ -295,7 +298,7 @@ function showMsg(text, cls) {
 }
 
 load();
-setInterval(load, 30000);
+setInterval(() => { if (!dirty) load(); }, 30000);
 </script>
 </body>
 </html>
