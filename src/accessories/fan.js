@@ -121,6 +121,9 @@ function findCompanionSpeed(platform, device) {
   const baseName = (device.name || '').toLowerCase().replace(/\.power|\.switch|\s+power$/i, '').trim();
   const baseRef = device.ref;
 
+  // check to see if speed is represented by the device itself
+  if (baseName.includes('speed') || baseName.includes('fanspeed')) return baseRef;
+
   // Search by name: same base + speed/fanspeed suffix
   for (const [ref, d] of platform.deviceCache) {
     if (ref === baseRef) continue;
