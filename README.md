@@ -32,6 +32,8 @@ This plugin was built from scratch as a modern replacement for older HomeSeer-to
 | CO Sensor | Carbon Monoxide Sensor | |
 | Leak Sensor | Leak Sensor | Water/flood sensors |
 | Light Sensor | Light Sensor | Lux/illuminance |
+| Alarm Panel | Security | Auto-detects Disarm/Arm-Stay/Arm-Away values from ControlPairs |
+
 
 ## Requirements
 
@@ -120,6 +122,28 @@ Thermostats in HS4 are typically split across multiple devices (mode, temperatur
 4. Same-location matching (devices with matching suffix names in the same HS4 location)
 
 ## Changelog
+
+### 1.0.20
+- fan/thermostat companion ref parent check
+
+### 1.0.19
+- Fix: real time sync of accessory state between homeseer and homebridge
+
+### 1.0.18
+- Plugin will now report failure to correctly process control values
+- Display name improvements
+
+### 1.0.17
+- Added support for alarm panels
+
+### 1.0.16
+- Better support for bond fans
+
+### 1.0.15
+- Fan accessory supports multiple speed or fixed speed (on/off only)
+
+### 1.0.14
+- Supports water valve accessory
 
 ### 1.0.13
 - Garage door uses value_string for state detection (Open, Closed, Opening, Closing, Stopped)
