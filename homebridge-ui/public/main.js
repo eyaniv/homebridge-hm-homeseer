@@ -26,7 +26,7 @@ function renderTable() {
     if (d.enabled && !enOn)  return false;
     if (!d.enabled && !disOn) return false;
     if (q) {
-      const hay = (d.name + ' ' + d.voiceCommand + ' ' + d.location + ' ' + d.location2 + ' ' + d.type).toLowerCase();
+      const hay = (d.name + ' ' + d.voiceCommand + ' ' + d.location + ' ' + d.location2 + ' ' + d.type + ' ' + d.ref).toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
