@@ -4,17 +4,28 @@ const toHs = (hk) => hk >= 100 ? 99 : Math.max(1, Math.round(hk));
 const toHk = (hs) => hs >= 99  ? 100 : Math.max(0, Math.round(hs));
 
 function createFanAccessory(platform, accessory, device) {
+  createFanAccessoryInternal(platform, accessory, device, true);
+}
+
+function createFanNoSpeedAccessory(platform, accessory, device) {
+  createFanAccessoryInternal(platform, accessory, device, false);
+}
+
+function createFanAccessoryInternal(platform, accessory, device, withSpeed) {
   const { Service, Characteristic } = platform.api.hap;
   const ref = device.ref;
   const cv = platform.controlValues.get(ref) || {};
   const onVal = cv.onValue != null ? cv.onValue : 255;
   const offVal = cv.offValue != null ? cv.offValue : 0;
-  const hasDim = !!cv.hasDim;
+  const hasDim = withSpeed && (!!cv.hasDim);
 
-  const speedRef = findCompanionSpeed(platform, device);
-  const hasSpeed = hasDim || speedRef != null;
+  const speedRef = withSpeed ? findCompanionSpeed(platform, device) : null;
+  const hasSpeed = withSpeed && (hasDim || speedRef != null);
 
-  platform.log.info(`[Fan] ref=${ref} onVal=${onVal} offVal=${offVal} hasDim=${hasDim} speedRef=${speedRef}`);
+  if (withSpeed)
+    platform.log.info(`[Fan] ref=${ref} onVal=${onVal} offVal=${offVal} hasDim=${hasDim} speedRef=${speedRef}`);
+  else
+    platform.log.info(`[FanNoSpeed] ref=${ref} onVal=${onVal} offVal=${offVal}`);
 
   let service = accessory.getService(Service.Fanv2) || accessory.getService(Service.Fan);
   if (service && hasSpeed && service.UUID === Service.Fan.UUID) {
@@ -115,39 +126,6 @@ function createFanAccessory(platform, accessory, device) {
       service.updateCharacteristic(Characteristic.On, value !== offVal);
     });
   }
-}
-
-function createFanNoSpeedAccessory(platform, accessory, device) {
-  const { Service, Characteristic } = platform.api.hap;
-  const ref = device.ref;
-  const cv = platform.controlValues.get(ref) || {};
-  const onVal = cv.onValue != null ? cv.onValue : 255;
-  const offVal = cv.offValue != null ? cv.offValue : 0;
-
-  platform.log.info(`[FanNoSpeed] ref=${ref} onVal=${onVal} offVal=${offVal}`);
-
-  let service = accessory.getService(Service.Fanv2) || accessory.getService(Service.Fan);
-  if (service && service.UUID === Service.Fanv2.UUID) {
-    accessory.removeService(service);
-    service = null;
-  }
-
-  if (!service) service = accessory.addService(Service.Fan, accessory.displayName);
-
-  service.getCharacteristic(Characteristic.On)
-    .onGet(async () => {
-      const d = platform.deviceCache.get(ref);
-      return d ? (d.value !== offVal) : false;
-    })
-    .onSet(async (value) => {
-      const d = platform.deviceCache.get(ref);
-      if (d) d.value = value ? onVal : offVal;
-      await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
-    });
-
-  platform.hs.onValueChange(ref, (value) => {
-    service.updateCharacteristic(Characteristic.On, value !== offVal);
-  });
 }
 
 function findCompanionSpeed(platform, device) {
