@@ -61,7 +61,7 @@
 </header>
 
 <div class="toolbar">
-  <input type="text" id="search" placeholder="Search name, location, type..." oninput="filterTable()">
+  <input type="text" id="search" placeholder="Search name, location, type, device id..." oninput="filterTable()">
   <label><input type="checkbox" id="showEnabled" onchange="filterTable()" checked> Show enabled</label>
   <label><input type="checkbox" id="showDisabled" onchange="filterTable()" checked> Show disabled</label>
   <label><input type="checkbox" id="hideBattery" onchange="filterTable()"> Hide battery</label>
@@ -95,7 +95,7 @@
 
 <script>
 const TYPES = [
-  'switch','lightbulb','lightbulb-nodim','fan','garage','lock','valve','security','thermostat',
+  'switch','lightbulb','lightbulb-nodim','fan','fan-nospeed','garage','lock','valve','security','thermostat',
   'temperature','humidity','motion','contact','smoke','co','leak','lightsensor','number','battery'
 ];
 
@@ -142,7 +142,7 @@ function renderTable() {
     if (!d.enabled && !showDis) return false;
     if (hideBat && (d.autoType === 'battery' || d.type === 'battery')) return false;
     if (q) {
-      const hay = `${d.name} ${d.voiceCommand} ${d.location} ${d.location2} ${d.deviceType} ${d.type}`.toLowerCase();
+      const hay = `${d.name} ${d.voiceCommand} ${d.location} ${d.location2} ${d.deviceType} ${d.type} ${d.ref}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;

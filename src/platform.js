@@ -8,7 +8,7 @@ const { autoDetectType, isBattery } = require('./discovery');
 const { startWebServer } = require('./webui/server');
 const { createSwitchAccessory } = require('./accessories/switch');
 const { createLightbulbAccessory, createLightbulbNoDimAccessory } = require('./accessories/lightbulb');
-const { createFanAccessory } = require('./accessories/fan');
+const { createFanAccessory, createFanNoSpeedAccessory } = require('./accessories/fan');
 const { createGarageAccessory } = require('./accessories/garage');
 const { createLockAccessory } = require('./accessories/lock');
 const { createSensorAccessory } = require('./accessories/sensors');
@@ -235,16 +235,17 @@ class HomeSeerNGPlatform {
     }
 
     switch (type) {
-      case 'switch':    createSwitchAccessory(this, accessory, device);      break;
-      case 'lightbulb': createLightbulbAccessory(this, accessory, device);   break;
-      case 'lightbulb-nodim': createLightbulbNoDimAccessory(this, accessory, device); break;
-      case 'fan':       createFanAccessory(this, accessory, device);         break;
-      case 'garage':    createGarageAccessory(this, accessory, device);      break;
-      case 'lock':      createLockAccessory(this, accessory, device);        break;
-      case 'valve':     createValveAccessory(this, accessory, device);       break;
-      case 'security':  createSecurityAccessory(this, accessory, device);    break;
-      case 'thermostat': createThermostatAccessory(this, accessory, device); break;
-      default:          createSensorAccessory(this, accessory, device, type); break;
+      case 'switch':    		createSwitchAccessory(this, accessory, device);      	break;
+      case 'lightbulb': 		createLightbulbAccessory(this, accessory, device);   	break;
+      case 'lightbulb-nodim': 	createLightbulbNoDimAccessory(this, accessory, device); break;
+      case 'fan':       		createFanAccessory(this, accessory, device);         	break;
+      case 'fan-nospeed':       createFanNoSpeedAccessory(this, accessory, device);     break;
+      case 'garage':    		createGarageAccessory(this, accessory, device);      	break;
+      case 'lock':      		createLockAccessory(this, accessory, device);        	break;
+      case 'valve':     		createValveAccessory(this, accessory, device);       	break;
+      case 'security':  		createSecurityAccessory(this, accessory, device);    	break;
+      case 'thermostat': 		createThermostatAccessory(this, accessory, device); 	break;
+      default:          		createSensorAccessory(this, accessory, device, type); 	break;
     }
   }
 
