@@ -145,9 +145,9 @@ function createFanNoSpeedAccessory(platform, accessory, device) {
       await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
     });
 
-    platform.hs.onValueChange(ref, (value) => {
-      service.updateCharacteristic(Characteristic.On, value !== offVal);
-    });
+  platform.hs.onValueChange(ref, (value) => {
+    service.updateCharacteristic(Characteristic.On, value !== offVal);
+  });
 }
 
 function findCompanionSpeed(platform, device) {

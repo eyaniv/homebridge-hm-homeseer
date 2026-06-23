@@ -1,4 +1,4 @@
-const TYPES = ['switch','lightbulb','lightbulb-nodim','fan','garage','lock','valve','security','thermostat',
+const TYPES = ['switch','lightbulb','lightbulb-nodim','fan','fan-nospeed','garage','lock','valve','security','thermostat',
   'temperature','humidity','motion','contact','smoke','co','leak','lightsensor','number','battery'];
 
 let allDevices = [];
