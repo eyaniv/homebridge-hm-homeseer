@@ -125,6 +125,7 @@ Thermostats in HS4 are typically split across multiple devices (mode, temperatur
 
 ### 1.0.22
 - Automatically fetch control pairs for newly created devices
+- Fan speed fixes for dimmable fans
 
 ### 1.0.21
 - Added non dimmable fan
