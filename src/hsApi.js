@@ -73,6 +73,7 @@ class HsApi {
     const data = await this._request(
       `/JSON?request=controldevicebyvalue&ref=${ref}&value=${value}`
     );
+    this.log.debug(`[HomeSeerNG] Device ${ref} is set to value ${value}`);
     return data;
   }
 
@@ -80,6 +81,7 @@ class HsApi {
     const data = await this._request(
       `/JSON?request=controldevicebylabel&ref=${ref}&label=${encodeURIComponent(label)}`
     );
+    this.log.debug(`[HomeSeerNG] Device ${ref} is set to label ${label}`);
     return data;
   }
 

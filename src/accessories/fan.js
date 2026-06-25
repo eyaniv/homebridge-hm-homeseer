@@ -42,6 +42,7 @@ function createFanAccessoryInternal(platform, accessory, device, withSpeed) {
 
     const useCompanion = speedRef != null;
     const maxSpeed = useCompanion ? detectMaxSpeed(platform, speedRef) : 0;
+    platform.log.debug(`[Fan] ref=${ref} maxSpeed=${maxSpeed}`);
     const toSpeedHk = (v) => maxSpeed > 0 ? Math.round(v * 100 / maxSpeed) : toHk(v);
     const toSpeedHs = (hk) => maxSpeed > 0 ? Math.max(1, Math.min(maxSpeed, Math.round(hk * maxSpeed / 100))) : toHs(hk);
 
@@ -162,7 +163,10 @@ function findCompanionSpeed(platform, device) {
 function detectMaxSpeed(platform, speedRef) {
   const d = platform.deviceCache.get(speedRef);
   if (!d) return 6;
-  // If current value is small, assume discrete speeds
+  // try to see if on value is defined
+  const onVal = platform.controlValues.get(speedRef)?.onValue;
+  if (onVal && onVal > 0) return onVal;
+  // Fallback - if current value is small, assume discrete speeds
   if (d.value >= 0 && d.value <= 10) return 6;
   // Otherwise treat as 0-99 dimmer range
   return 0;
