@@ -123,6 +123,13 @@ Thermostats in HS4 are typically split across multiple devices (mode, temperatur
 
 ## Changelog
 
+### 1.0.22
+- Automatically fetch control pairs for newly created devices
+
+### 1.0.21
+- Added non dimmable fan
+- UI can now search by device ID
+
 ### 1.0.20
 - fan/thermostat companion ref parent check
 

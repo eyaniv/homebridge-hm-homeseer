@@ -74,6 +74,18 @@ class HomeSeerNGPlatform {
     // Periodically refresh devices and sync voice-command changes
     setInterval(async () => {
       await this.refreshDevices();
+      const skipTypes = 'thermostat temperature humidity motion contact smoke co leak lightsensor number battery';
+      for (const [ref] of this.deviceCache) {
+        const hasVoice = this.deviceCache.get(ref).voice_command && this.deviceCache.get(ref).voice_command.trim();
+        if (!hasVoice && !this.typeOverrides.has(ref)) continue;
+        if (this.disabledRefs.has(ref)) continue;
+          if (!this.controlValues.has(ref)) {
+            const deviceType = this.typeOverrides.get(ref)
+            if (skipTypes.includes(deviceType)) continue;
+            this.log.info(`[HomeSeerNG] Missing Control Values for device ${ref}`);
+            await this.fetchControlValuesForDevice(ref);
+        }       
+      }
       this.syncAccessories(false); // incremental — only add/remove, don't reconfigure existing
     }, SYNC_INTERVAL);
 
@@ -97,62 +109,69 @@ class HomeSeerNGPlatform {
   }
 
   async fetchControlValues() {
-    const CONTROL_USE = { ON: 1, OFF: 2, DIM: 3, ON_ALT: 4, LOCK: 18, UNLOCK: 19 };
     let count = 0;
     for (const [ref] of this.deviceCache) {
       const hasVoice = this.deviceCache.get(ref).voice_command && this.deviceCache.get(ref).voice_command.trim();
       if (!hasVoice && !this.typeOverrides.has(ref)) continue;
       if (this.disabledRefs.has(ref)) continue;
-      try {
-        const data = await this.hs.getControl(ref);
-        const pairs = (data && data.ControlPairs) || [];
-        if (pairs.length === 0) continue;
-        const cv = {};
-        for (const p of pairs) {
-          switch (p.ControlUse) {
-            case CONTROL_USE.ON:     cv.onValue = p.ControlValue; break;
-            case CONTROL_USE.OFF:    cv.offValue = p.ControlValue; break;
-            case CONTROL_USE.DIM:    cv.hasDim = true; break;
-            case CONTROL_USE.ON_ALT: cv.onAltValue = p.ControlValue; break;
-            case CONTROL_USE.LOCK:   cv.lockValue = p.ControlValue; break;
-            case CONTROL_USE.UNLOCK: cv.unlockValue = p.ControlValue; break;
-          }
-        }
-        // Always scan for open/close/stop/speed (no ControlUse enum for these)
-        for (const p of pairs) {
-          const label = (p.Label || '').toLowerCase().trim();
-          if ((label === 'open' || label === 'opening') && cv.openValue == null) cv.openValue = p.ControlValue;
-          else if ((label === 'close' || label === 'closed' || label === 'closing') && cv.closeValue == null) cv.closeValue = p.ControlValue;
-          else if (label === 'stop' && cv.stopValue == null) cv.stopValue = p.ControlValue;
-          if (label.includes('speed') || label.includes('rotation') || (label === 'dim' && !cv.hasDim)) cv.hasDim = true;
-          if (label.includes('disarm') && cv.disarmValue == null) cv.disarmValue = p.ControlValue;
-          if (label.includes('arm') && label.includes('stay') && cv.armStayValue == null) cv.armStayValue = p.ControlValue;
-          if (label.includes('arm') && label.includes('away') && cv.armAwayValue == null) cv.armAwayValue = p.ControlValue;
-          if (label.includes('arm') && label.includes('night') && cv.armNightValue == null) cv.armNightValue = p.ControlValue;
-          if (label.includes('arm') && label.includes('max') && cv.armMaxValue == null) cv.armMaxValue = p.ControlValue;
-          if (label.includes('arm') && label.includes('instant') && cv.armInstantValue == null) cv.armInstantValue = p.ControlValue;
-        }
-        // Fallback: if ControlUse was all 0, detect on/off/lock from labels
-        if (cv.onValue == null && cv.offValue == null && cv.lockValue == null) {
-          for (const p of pairs) {
-            const label = (p.Label || '').toLowerCase().trim();
-            if (label === 'off' && cv.offValue == null) cv.offValue = p.ControlValue;
-            else if ((label === 'on' || label === '(value)') && cv.onValue == null) cv.onValue = p.ControlValue;
-            else if (label.includes('lock') && !label.includes('unlock') && cv.lockValue == null) cv.lockValue = p.ControlValue;
-            else if (label.includes('unlock') && cv.unlockValue == null) cv.unlockValue = p.ControlValue;
-          }
-        }
-        if (Object.keys(cv).length > 0) {
-          this.controlValues.set(ref, cv);
-          count++;
-        } else if (pairs.length > 0) {
-          this.log.info(`[HomeSeerNG] ref=${ref}: ${pairs.length} ControlPairs but no values detected. Labels: ${pairs.map(p => `"${p.Label}"=${p.ControlValue}(CU=${p.ControlUse})`).join(', ')}`);
-        }
-      } catch (e) {
-        this.log.debug(`[HomeSeerNG] Could not fetch control pairs for ref=${ref}: ${e.message}`);
-      }
+      count += await this.fetchControlValuesForDevice(ref);
     }
+
     this.log.info(`[HomeSeerNG] Loaded control values for ${count} devices.`);
+  }
+
+  async fetchControlValuesForDevice(ref) {
+    const CONTROL_USE = { ON: 1, OFF: 2, DIM: 3, ON_ALT: 4, LOCK: 18, UNLOCK: 19 };
+    let success = 0;
+    try {
+      const data = await this.hs.getControl(ref);
+	  const pairs = (data && data.ControlPairs) || [];
+	  if (pairs.length === 0) return success;
+	  const cv = {};
+	  for (const p of pairs) {
+	    switch (p.ControlUse) {
+		  case CONTROL_USE.ON:     cv.onValue = p.ControlValue; break;
+		  case CONTROL_USE.OFF:    cv.offValue = p.ControlValue; break;
+		  case CONTROL_USE.DIM:    cv.hasDim = true; break;
+		  case CONTROL_USE.ON_ALT: cv.onAltValue = p.ControlValue; break;
+		  case CONTROL_USE.LOCK:   cv.lockValue = p.ControlValue; break;
+		  case CONTROL_USE.UNLOCK: cv.unlockValue = p.ControlValue; break;
+	    }
+	  }
+	  // Always scan for open/close/stop/speed (no ControlUse enum for these)
+	  for (const p of pairs) {
+	    const label = (p.Label || '').toLowerCase().trim();
+	    if ((label === 'open' || label === 'opening') && cv.openValue == null) cv.openValue = p.ControlValue;
+	    else if ((label === 'close' || label === 'closed' || label === 'closing') && cv.closeValue == null) cv.closeValue = p.ControlValue;
+	    else if (label === 'stop' && cv.stopValue == null) cv.stopValue = p.ControlValue;
+	    if (label.includes('speed') || label.includes('rotation') || (label === 'dim' && !cv.hasDim)) cv.hasDim = true;
+	    if (label.includes('disarm') && cv.disarmValue == null) cv.disarmValue = p.ControlValue;
+	    if (label.includes('arm') && label.includes('stay') && cv.armStayValue == null) cv.armStayValue = p.ControlValue;
+	    if (label.includes('arm') && label.includes('away') && cv.armAwayValue == null) cv.armAwayValue = p.ControlValue;
+	    if (label.includes('arm') && label.includes('night') && cv.armNightValue == null) cv.armNightValue = p.ControlValue;
+	    if (label.includes('arm') && label.includes('max') && cv.armMaxValue == null) cv.armMaxValue = p.ControlValue;
+	    if (label.includes('arm') && label.includes('instant') && cv.armInstantValue == null) cv.armInstantValue = p.ControlValue;
+	  }
+	  // Fallback: if ControlUse was all 0, detect on/off/lock from labels
+	  if (cv.onValue == null && cv.offValue == null && cv.lockValue == null) {
+	    for (const p of pairs) {
+		  const label = (p.Label || '').toLowerCase().trim();
+		  if (label === 'off' && cv.offValue == null) cv.offValue = p.ControlValue;
+		  else if ((label === 'on' || label === '(value)') && cv.onValue == null) cv.onValue = p.ControlValue;
+		  else if (label.includes('lock') && !label.includes('unlock') && cv.lockValue == null) cv.lockValue = p.ControlValue;
+		  else if (label.includes('unlock') && cv.unlockValue == null) cv.unlockValue = p.ControlValue;
+	    }
+	  }
+	  if (Object.keys(cv).length > 0) {
+	    this.controlValues.set(ref, cv);
+	    success = 1;
+	  } else if (pairs.length > 0) {
+	    this.log.info(`[HomeSeerNG] ref=${ref}: ${pairs.length} ControlPairs but no values detected. Labels: ${pairs.map(p => `"${p.Label}"=${p.ControlValue}(CU=${p.ControlUse})`).join(', ')}`);
+	  }
+    } catch (e) {
+	  this.log.debug(`[HomeSeerNG] Could not fetch control pairs for ref=${ref}: ${e.message}`);
+    }
+    return success;
   }
 
   /**
