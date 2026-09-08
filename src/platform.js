@@ -30,6 +30,7 @@ class HomeSeerNGPlatform {
     this.accessories    = new Map(); // uuid -> PlatformAccessory
     this.typeOverrides  = new Map(); // ref -> type (from JSON file)
     this.disabledRefs   = new Set(); // refs explicitly disabled by user
+    this.ControlValuesOverrides = new Map(); // ref -> control values (from JSON file)
     this.controlValues  = new Map(); // ref -> { onValue, offValue, lockValue, unlockValue }
     this._lastFetchOk   = false;
 
@@ -127,6 +128,16 @@ class HomeSeerNGPlatform {
     const CONTROL_USE = { ON: 1, OFF: 2, DIM: 3, ON_ALT: 4, LOCK: 18, UNLOCK: 19 };
     let success = 0;
     try {
+      if (this.ControlValuesOverrides.has(ref)) {
+      	this.log.debug(`[HomeSeerNG] ref=${ref}: found overriding control values`);
+      	this.controlValues.set(ref, this.ControlValuesOverrides.get(ref));
+      	success = 1;
+      	return success;
+      }
+      else {
+      	this.log.debug(`[HomeSeerNG] ref=${ref}: using normal processing path`);
+      }
+
       const data = await this.hs.getControl(ref);
       const pairs = (data && data.ControlPairs) || [];
       if (pairs.length === 0) return success;
@@ -287,6 +298,20 @@ class HomeSeerNGPlatform {
     this.typeOverrides = new Map(enabled.map(o => [o.ref, o.type]));
     this.disabledRefs  = new Set(disabled.map(o => o.ref));
     try {
+      const allSelectionsToBeSaved = structuredClone(allSelections);
+      
+      for (let i=0; i < allSelectionsToBeSaved.length; ++i) {
+        const dev = allSelectionsToBeSaved[i];
+      	const ref = dev.ref;
+      	const cv = this.ControlValuesOverrides.get(ref);
+      	if (cv != undefined) {
+      		this.log.debug(`[HomeSeerNG] controlValues found for ${ref}`);
+      		allSelectionsToBeSaved[i].controlValues = cv;
+      	} else { 
+      		this.log.debug(`[HomeSeerNG] controlValues not found for ${JSON.stringify(ref)}`);
+		}
+      }
+      this.log.debug(`[HomeSeerNG] Saving data: ${JSON.stringify(allSelectionsToBeSaved)}`);
       fs.writeFileSync(this._devicesFile, JSON.stringify(allSelections, null, 2));
     } catch (e) {
       this.log.error(`[HomeSeerNG] Failed to save type overrides: ${e.message}`);
@@ -298,6 +323,10 @@ class HomeSeerNGPlatform {
     try {
       if (fs.existsSync(this._devicesFile)) {
         const data = JSON.parse(fs.readFileSync(this._devicesFile, 'utf8'));
+   		this.log.debug(`[HomeSeerNG] Loaded data: ${JSON.stringify(data)}`);
+		this.ControlValuesOverrides = new Map(data.filter(item => item.controlValues !== undefined).map(item => [item.ref, item.controlValues]));
+		const plainDebugObj = Object.fromEntries(this.ControlValuesOverrides);
+		this.log.debug(`[HomeSeerNG] Loaded overrides: ${JSON.stringify(plainDebugObj)}`);
         const enabled  = data.filter(o => o.enabled !== false);
         const disabled = data.filter(o => o.enabled === false);
         this.typeOverrides = new Map(enabled.map(o => [o.ref, o.type]));

@@ -123,6 +123,13 @@ Thermostats in HS4 are typically split across multiple devices (mode, temperatur
 
 ## Changelog
 
+### 1.0.24
+- Save and load manually defined control values
+- Allow overriding of control values in switches
+
+### 1.0.23
+- Prevent accessory removal when homeseer is unreachable
+
 ### 1.0.22
 - Automatically fetch control pairs for newly created devices
 - Fan speed fixes for dimmable fans
