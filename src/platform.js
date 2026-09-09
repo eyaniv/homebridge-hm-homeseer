@@ -15,6 +15,12 @@ const { createSensorAccessory } = require('./accessories/sensors');
 const { createThermostatAccessory } = require('./accessories/thermostat');
 const { createValveAccessory } = require('./accessories/valve');
 const { createSecurityAccessory } = require('./accessories/security');
+const { createWindowCoveringAccessory } = require('./accessories/windowcovering');
+const { createDoorAccessory } = require('./accessories/door');
+const { createWindowAccessory } = require('./accessories/window');
+const { createOutletAccessory } = require('./accessories/outlet');
+const { createProgrammableSwitchAccessory } = require('./accessories/programmableswitch');
+const { createIrrigationAccessory } = require('./accessories/irrigation');
 
 const PLUGIN_NAME   = 'homebridge-hm-homeseer';
 const PLATFORM_NAME = 'HomeSeerNG';
@@ -278,6 +284,12 @@ class HomeSeerNGPlatform {
       case 'valve':     		createValveAccessory(this, accessory, device);       	break;
       case 'security':  		createSecurityAccessory(this, accessory, device);    	break;
       case 'thermostat': 		createThermostatAccessory(this, accessory, device); 	break;
+      case 'windowcovering': 	createWindowCoveringAccessory(this, accessory, device); break;
+      case 'door':           	createDoorAccessory(this, accessory, device);           break;
+      case 'window':         	createWindowAccessory(this, accessory, device);         break;
+      case 'outlet':         	createOutletAccessory(this, accessory, device);         break;
+      case 'programmableswitch': createProgrammableSwitchAccessory(this, accessory, device); break;
+      case 'irrigation':     	createIrrigationAccessory(this, accessory, device);     break;
       default:          		createSensorAccessory(this, accessory, device, type); 	break;
     }
   }

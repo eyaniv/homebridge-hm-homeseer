@@ -159,6 +159,61 @@ function createSensorAccessory(platform, accessory, device, type) {
       });
       break;
 
+    case 'occupancy':
+      service = accessory.getService(Service.OccupancySensor) ||
+                accessory.addService(Service.OccupancySensor, accessory.displayName);
+      characteristic = Characteristic.OccupancyDetected;
+      platform.hs.onValueChange(ref, (value) => {
+        service.updateCharacteristic(characteristic,
+          value !== 0 ? Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
+                      : Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+      });
+      service.getCharacteristic(characteristic).onGet(async () => {
+        const d = platform.deviceCache.get(ref);
+        if (!d) return Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
+        return d.value !== 0 ? Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
+                             : Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
+      });
+      break;
+
+    case 'co2':
+      service = accessory.getService(Service.CarbonDioxideSensor) ||
+                accessory.addService(Service.CarbonDioxideSensor, accessory.displayName);
+      characteristic = Characteristic.CarbonDioxideDetected;
+      platform.hs.onValueChange(ref, (value) => {
+        service.updateCharacteristic(characteristic,
+          value > 1000 ? Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL
+                       : Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL);
+        service.updateCharacteristic(Characteristic.CarbonDioxideLevel, Math.max(0, value));
+      });
+      service.getCharacteristic(characteristic).onGet(async () => {
+        const d = platform.deviceCache.get(ref);
+        if (!d) return Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
+        return d.value > 1000 ? Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL
+                              : Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
+      });
+      service.getCharacteristic(Characteristic.CarbonDioxideLevel)
+        .onGet(async () => {
+          const d = platform.deviceCache.get(ref);
+          return d ? Math.max(0, d.value) : 0;
+        });
+      break;
+
+    case 'airquality':
+      service = accessory.getService(Service.AirQualitySensor) ||
+                accessory.addService(Service.AirQualitySensor, accessory.displayName);
+      characteristic = Characteristic.AirQuality;
+      // HS value mapped to HAP: 0=Unknown, 1=Excellent, 2=Good, 3=Fair, 4=Inferior, 5=Poor
+      const clampAQ = (v) => Math.min(5, Math.max(0, Math.round(v)));
+      platform.hs.onValueChange(ref, (value) => {
+        service.updateCharacteristic(characteristic, clampAQ(value));
+      });
+      service.getCharacteristic(characteristic).onGet(async () => {
+        const d = platform.deviceCache.get(ref);
+        return d ? clampAQ(d.value) : 0;
+      });
+      break;
+
     default:
       break;
   }
