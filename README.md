@@ -161,7 +161,8 @@ The allowed override values depend on the device type:
 
 ## Changelog
 
-## 1.0.26
+### 1.0.26
+- Fix HomeKit room/icon reset on plugin restart
 - Documented `controlValues` override syntax and allowed keys per device type in README
 - Added changelog
 
