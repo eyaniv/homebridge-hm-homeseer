@@ -259,9 +259,14 @@ class HomeSeerNGPlatform {
 
   _configureAccessory(accessory, device, type) {
     const { Service } = this.api.hap;
-    for (const svc of accessory.services) {
-      if (svc.UUID !== Service.AccessoryInformation.UUID) {
-        try { accessory.removeService(svc); } catch {}
+    // Only remove non-info services when the type has changed — removing
+    // and re-adding services causes HomeKit to reset room/icon assignments.
+    const prevType = accessory.context.type;
+    if (prevType && prevType !== type) {
+      for (const svc of accessory.services) {
+        if (svc.UUID !== Service.AccessoryInformation.UUID) {
+          try { accessory.removeService(svc); } catch {}
+        }
       }
     }
 
