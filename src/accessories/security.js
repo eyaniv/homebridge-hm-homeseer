@@ -76,17 +76,22 @@ function createSecurityAccessory(platform, accessory, device) {
       return valueToTarget(fresh.value, fresh.value_string || fresh.status);
     })
     .onSet(async (value) => {
-      let sendVal;
-      switch (value) {
-        case SSTS.STAY_ARM:  sendVal = stayVal; break;
-        case SSTS.AWAY_ARM:  sendVal = awayVal; break;
-        case SSTS.NIGHT_ARM: sendVal = nightVal; break;
-        case SSTS.DISARM:    sendVal = disarmVal; break;
+      try {
+        let sendVal;
+        switch (value) {
+          case SSTS.STAY_ARM:  sendVal = stayVal; break;
+          case SSTS.AWAY_ARM:  sendVal = awayVal; break;
+          case SSTS.NIGHT_ARM: sendVal = nightVal; break;
+          case SSTS.DISARM:    sendVal = disarmVal; break;
+        }
+        if (sendVal == null) return;
+        const dd = platform.deviceCache.get(ref);
+        if (dd) dd.value = sendVal;
+        await platform.hs.controlDeviceByValue(ref, sendVal);
+      } catch (e) {
+        platform.log.error(`[Security] ref=${ref}: failed to set TargetState=${value}: ${e.message}`);
+        throw e;
       }
-      if (sendVal == null) return;
-      const dd = platform.deviceCache.get(ref);
-      if (dd) dd.value = sendVal;
-      await platform.hs.controlDeviceByValue(ref, sendVal);
     });
 
   platform.hs.onValueChange(ref, async () => {

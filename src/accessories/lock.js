@@ -36,7 +36,12 @@ function createLockAccessory(platform, accessory, device) {
         ? LockTargetState.SECURED : LockTargetState.UNSECURED;
     })
     .onSet(async (value) => {
-      await platform.hs.controlDeviceByValue(ref, value === LockTargetState.SECURED ? lockVal : unlockVal);
+      try {
+        await platform.hs.controlDeviceByValue(ref, value === LockTargetState.SECURED ? lockVal : unlockVal);
+      } catch (e) {
+        platform.log.error(`[Lock] ref=${ref}: failed to set LockTargetState=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   platform.hs.onValueChange(ref, async () => {

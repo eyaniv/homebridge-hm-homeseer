@@ -67,6 +67,13 @@ class HomeSeerNGPlatform {
     }
 
     await this.refreshDevices();
+    let retryDelay = 5000;
+    while (!this._lastFetchOk) {
+      this.log.warn(`[HomeSeerNG] Initial device fetch failed, retrying in ${retryDelay / 1000}s...`);
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      await this.refreshDevices();
+      retryDelay = Math.min(retryDelay * 2, 60000);
+    }
     await this.fetchControlValues();
     this.syncAccessories(true);
 

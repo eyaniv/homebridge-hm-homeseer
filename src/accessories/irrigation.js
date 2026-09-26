@@ -18,10 +18,15 @@ function createIrrigationAccessory(platform, accessory, device) {
         : Characteristic.Active.INACTIVE;
     })
     .onSet(async (value) => {
-      const hsVal = value === Characteristic.Active.ACTIVE ? onVal : offVal;
-      const d = platform.deviceCache.get(ref);
-      if (d) d.value = hsVal;
-      await platform.hs.controlDeviceByValue(ref, hsVal);
+      try {
+        const hsVal = value === Characteristic.Active.ACTIVE ? onVal : offVal;
+        const d = platform.deviceCache.get(ref);
+        if (d) d.value = hsVal;
+        await platform.hs.controlDeviceByValue(ref, hsVal);
+      } catch (e) {
+        platform.log.error(`[Irrigation] ref=${ref}: failed to set Active=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   service.getCharacteristic(Characteristic.InUse)

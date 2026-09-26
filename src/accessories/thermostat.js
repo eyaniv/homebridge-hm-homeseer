@@ -58,10 +58,15 @@ function createThermostatAccessory(platform, accessory, device) {
       return THCS.HEAT;
     })
     .onSet(async (value) => {
-      if (modeRef) {
-        const d = platform.deviceCache.get(modeRef);
-        if (d) d.value = value;
-        await platform.hs.controlDeviceByValue(modeRef, value);
+      try {
+        if (modeRef) {
+          const d = platform.deviceCache.get(modeRef);
+          if (d) d.value = value;
+          await platform.hs.controlDeviceByValue(modeRef, value);
+        }
+      } catch (e) {
+        platform.log.error(`[Thermostat] ref=${modeRef}: failed to set TargetHeatingCoolingState=${value}: ${e.message}`);
+        throw e;
       }
     });
 
@@ -140,12 +145,17 @@ function createThermostatAccessory(platform, accessory, device) {
     })
     .onSet(async (value) => {
       const tRef = effectiveTargetRef();
-      if (!tRef) return;
-      const tempF = toF(value);
-      platform.log.info(`[Thermostat] Setting target to ${tempF}°F (ref=${tRef})`);
-      const d = platform.deviceCache.get(tRef);
-      if (d) d.value = tempF;
-      await platform.hs.controlDeviceByValue(tRef, tempF);
+      try {
+        if (!tRef) return;
+        const tempF = toF(value);
+        platform.log.info(`[Thermostat] Setting target to ${tempF}°F (ref=${tRef})`);
+        const d = platform.deviceCache.get(tRef);
+        if (d) d.value = tempF;
+        await platform.hs.controlDeviceByValue(tRef, tempF);
+      } catch (e) {
+        platform.log.error(`[Thermostat] ref=${tRef}: failed to set TargetTemperature=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   if (heatSetpointRef) {

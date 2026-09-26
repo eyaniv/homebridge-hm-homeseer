@@ -47,10 +47,15 @@ function createGarageAccessory(platform, accessory, device) {
       return getTarget(getDoorState(fresh.value, fresh.value_string || fresh.status));
     })
     .onSet(async (value) => {
-      const sendVal = value === TargetDoorState.OPEN ? openVal : closeVal;
-      const d = platform.deviceCache.get(ref);
-      if (d) d.value = sendVal;
-      await platform.hs.controlDeviceByValue(ref, sendVal);
+      try {
+        const sendVal = value === TargetDoorState.OPEN ? openVal : closeVal;
+        const d = platform.deviceCache.get(ref);
+        if (d) d.value = sendVal;
+        await platform.hs.controlDeviceByValue(ref, sendVal);
+      } catch (e) {
+        platform.log.error(`[Garage] ref=${ref}: failed to set TargetDoorState=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   service.getCharacteristic(Characteristic.ObstructionDetected)

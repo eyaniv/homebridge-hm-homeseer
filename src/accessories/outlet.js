@@ -16,9 +16,14 @@ function createOutletAccessory(platform, accessory, device) {
       return d ? (d.value !== offVal) : false;
     })
     .onSet(async (value) => {
-      const d = platform.deviceCache.get(ref);
-      if (d) d.value = value ? onVal : offVal;
-      await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
+      try {
+        const d = platform.deviceCache.get(ref);
+        if (d) d.value = value ? onVal : offVal;
+        await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
+      } catch (e) {
+        platform.log.error(`[Outlet] ref=${ref}: failed to set On=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   service.getCharacteristic(Characteristic.OutletInUse)

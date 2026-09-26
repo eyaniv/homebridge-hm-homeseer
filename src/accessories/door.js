@@ -23,10 +23,15 @@ function createDoorAccessory(platform, accessory, device) {
       return d ? toHk(d.value) : 0;
     })
     .onSet(async (value) => {
-      const hsVal = toHs(value);
-      const d = platform.deviceCache.get(ref);
-      if (d) d.value = hsVal;
-      await platform.hs.controlDeviceByValue(ref, hsVal);
+      try {
+        const hsVal = toHs(value);
+        const d = platform.deviceCache.get(ref);
+        if (d) d.value = hsVal;
+        await platform.hs.controlDeviceByValue(ref, hsVal);
+      } catch (e) {
+        platform.log.error(`[Door] ref=${ref}: failed to set TargetPosition=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   service.getCharacteristic(Characteristic.PositionState)

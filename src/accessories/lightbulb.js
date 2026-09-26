@@ -22,16 +22,21 @@ function createLightbulbAccessory(platform, accessory, device) {
       return d ? (d.value !== offVal) : false;
     })
     .onSet(async (value) => {
-      if (!value) {
-        const d = platform.deviceCache.get(ref);
-        if (d) d.value = offVal;
-        await platform.hs.controlDeviceByValue(ref, offVal);
-      } else if (!brightnessJustSet) {
-        const hkBrightness = service.getCharacteristic(Characteristic.Brightness).value || 100;
-        const hsVal = toHs(hkBrightness);
-        const d = platform.deviceCache.get(ref);
-        if (d) d.value = hsVal;
-        await platform.hs.controlDeviceByValue(ref, hsVal);
+      try {
+        if (!value) {
+          const d = platform.deviceCache.get(ref);
+          if (d) d.value = offVal;
+          await platform.hs.controlDeviceByValue(ref, offVal);
+        } else if (!brightnessJustSet) {
+          const hkBrightness = service.getCharacteristic(Characteristic.Brightness).value || 100;
+          const hsVal = toHs(hkBrightness);
+          const d = platform.deviceCache.get(ref);
+          if (d) d.value = hsVal;
+          await platform.hs.controlDeviceByValue(ref, hsVal);
+        }
+      } catch (e) {
+        platform.log.error(`[Lightbulb] ref=${ref}: failed to set On=${value}: ${e.message}`);
+        throw e;
       }
     });
 
@@ -41,12 +46,17 @@ function createLightbulbAccessory(platform, accessory, device) {
       return d ? toHk(d.value) : 0;
     })
     .onSet(async (value) => {
-      brightnessJustSet = true;
-      setTimeout(() => { brightnessJustSet = false; }, 200);
-      const hsVal = toHs(value);
-      const d = platform.deviceCache.get(ref);
-      if (d) d.value = hsVal;
-      await platform.hs.controlDeviceByValue(ref, hsVal);
+      try {
+        brightnessJustSet = true;
+        setTimeout(() => { brightnessJustSet = false; }, 200);
+        const hsVal = toHs(value);
+        const d = platform.deviceCache.get(ref);
+        if (d) d.value = hsVal;
+        await platform.hs.controlDeviceByValue(ref, hsVal);
+      } catch (e) {
+        platform.log.error(`[Lightbulb] ref=${ref}: failed to set Brightness=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   platform.hs.onValueChange(ref, (value) => {
@@ -71,9 +81,14 @@ function createLightbulbNoDimAccessory(platform, accessory, device) {
       return d ? (d.value !== offVal) : false;
     })
     .onSet(async (value) => {
-      const d = platform.deviceCache.get(ref);
-      if (d) d.value = value ? onVal : offVal;
-      await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
+      try {
+        const d = platform.deviceCache.get(ref);
+        if (d) d.value = value ? onVal : offVal;
+        await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
+      } catch (e) {
+        platform.log.error(`[Lightbulb] ref=${ref}: failed to set On=${value}: ${e.message}`);
+        throw e;
+      }
     });
 
   platform.hs.onValueChange(ref, (value) => {

@@ -54,14 +54,19 @@ function createFanAccessoryInternal(platform, accessory, device, withSpeed) {
         return d && d.value !== offVal ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
       })
       .onSet(async (value) => {
-        if (value === Characteristic.Active.INACTIVE) {
-          const d = platform.deviceCache.get(ref);
-          if (d) d.value = offVal;
-          await platform.hs.controlDeviceByValue(ref, offVal);
-        } else if (!speedJustSet) {
-          const d = platform.deviceCache.get(ref);
-          if (d) d.value = onVal;
-          await platform.hs.controlDeviceByValue(ref, onVal);
+        try {
+          if (value === Characteristic.Active.INACTIVE) {
+            const d = platform.deviceCache.get(ref);
+            if (d) d.value = offVal;
+            await platform.hs.controlDeviceByValue(ref, offVal);
+          } else if (!speedJustSet) {
+            const d = platform.deviceCache.get(ref);
+            if (d) d.value = onVal;
+            await platform.hs.controlDeviceByValue(ref, onVal);
+          }
+        } catch (e) {
+          platform.log.error(`[Fan] ref=${ref}: failed to set Active=${value}: ${e.message}`);
+          throw e;
         }
       });
 
@@ -75,24 +80,29 @@ function createFanAccessoryInternal(platform, accessory, device, withSpeed) {
         return d ? toHk(d.value) : 0;
       })
       .onSet(async (value) => {
-        speedJustSet = true;
-        setTimeout(() => { speedJustSet = false; }, 200);
-        if (useCompanion) {
-          const hsVal = toSpeedHs(value);
-          const d = platform.deviceCache.get(speedRef);
-          if (d) d.value = hsVal;
-          await platform.hs.controlDeviceByValue(speedRef, hsVal);
-          // Also turn on if off
-          const pd = platform.deviceCache.get(ref);
-          if (pd && pd.value === offVal) {
-            pd.value = onVal;
-            await platform.hs.controlDeviceByValue(ref, onVal);
+        try {
+          speedJustSet = true;
+          setTimeout(() => { speedJustSet = false; }, 200);
+          if (useCompanion) {
+            const hsVal = toSpeedHs(value);
+            const d = platform.deviceCache.get(speedRef);
+            if (d) d.value = hsVal;
+            await platform.hs.controlDeviceByValue(speedRef, hsVal);
+            // Also turn on if off
+            const pd = platform.deviceCache.get(ref);
+            if (pd && pd.value === offVal) {
+              pd.value = onVal;
+              await platform.hs.controlDeviceByValue(ref, onVal);
+            }
+          } else {
+            const hsVal = toHs(value);
+            const d = platform.deviceCache.get(ref);
+            if (d) d.value = hsVal;
+            await platform.hs.controlDeviceByValue(ref, hsVal);
           }
-        } else {
-          const hsVal = toHs(value);
-          const d = platform.deviceCache.get(ref);
-          if (d) d.value = hsVal;
-          await platform.hs.controlDeviceByValue(ref, hsVal);
+        } catch (e) {
+          platform.log.error(`[Fan] ref=${ref}: failed to set RotationSpeed=${value}: ${e.message}`);
+          throw e;
         }
       });
 
@@ -118,9 +128,14 @@ function createFanAccessoryInternal(platform, accessory, device, withSpeed) {
         return d ? (d.value !== offVal) : false;
       })
       .onSet(async (value) => {
-        const d = platform.deviceCache.get(ref);
-        if (d) d.value = value ? onVal : offVal;
-        await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
+        try {
+          const d = platform.deviceCache.get(ref);
+          if (d) d.value = value ? onVal : offVal;
+          await platform.hs.controlDeviceByValue(ref, value ? onVal : offVal);
+        } catch (e) {
+          platform.log.error(`[Fan] ref=${ref}: failed to set On=${value}: ${e.message}`);
+          throw e;
+        }
       });
 
     platform.hs.onValueChange(ref, (value) => {
