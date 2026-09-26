@@ -1,5 +1,9 @@
 # homebridge-hm-homeseer
 
+## 1.0.27
+- Failed homeseer commands are now properly logged
+- Fix a condition where if Homebridge comes up before homeseer, homebridge will not properly control Homeseer devices
+
 ## 1.0.26
 - Fix HomeKit room/icon reset on plugin restart
 - Documented `controlValues` override syntax and allowed keys per device type in README
