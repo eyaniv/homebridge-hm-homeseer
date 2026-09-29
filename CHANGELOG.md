@@ -1,8 +1,8 @@
 # homebridge-hm-homeseer
 
 ## 1.0.27
-- Failed homeseer commands are now properly logged
-- Fix a condition where if Homebridge comes up before homeseer, homebridge will not properly control Homeseer devices
+- Fix silent command failures: every accessory's onSet handler now logs a proper error instead of failing silently when a HomeSeer command times out or fails
+- Fix startup device-sync race: the initial refreshDevices() call now retries with backoff until it succeeds before the one-time full sync, instead of possibly syncing zero devices if HomeSeer wasn't ready yet
 
 ## 1.0.26
 - Fix HomeKit room/icon reset on plugin restart

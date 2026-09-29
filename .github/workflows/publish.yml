@@ -1,0 +1,52 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Must match the environment name registered in npm's Trusted Publisher
+    # config for this package -- npm checks the OIDC token's environment
+    # claim against it, so a mismatch (or missing environment here) fails
+    # the exchange even with an otherwise-correct Trusted Publisher entry.
+    environment: mike
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing (OIDC) requires npm >= 11.5.1; Node 22's bundled
+      # npm is older, so it must be upgraded explicitly before publishing.
+      - run: npm install -g npm@^11
+
+      # setup-node's registry-url option always writes a `_authToken=...`
+      # line to .npmrc, even with no real NODE_AUTH_TOKEN secret configured.
+      # npm treats that line's mere presence as "classic auth is configured"
+      # and skips the OIDC exchange entirely, so it must be stripped for
+      # trusted publishing to actually kick in.
+      - run: sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+
+      - name: Debug OIDC environment
+        run: |
+          npm --version
+          which npm
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN set: $([ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ] && echo yes || echo no)"
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL set: $([ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && echo yes || echo no)"
+          cat "$NPM_CONFIG_USERCONFIG"
+
+      # This Trusted Publisher only grants "npm stage publish" permission
+      # (not direct publish), by design -- a plain `npm publish` gets
+      # 403 OIDC permission denied. Staging queues the release; a human
+      # must then run `npm stage approve <stage-id>` (or approve on
+      # npmjs.com) with their own 2FA to actually make it live.
+      - run: npm stage publish --loglevel silly
