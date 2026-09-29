@@ -4,6 +4,10 @@
   "version": "1.0.27",
   "description": "HM HomeSeer Plugin for Homebridge — auto-discovery of HS4 devices, real-time updates via ASCII event stream, web UI for device selection",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wpiman/homebridge-hm-homeseer"
+  },
   "engines": {
     "node": ">=18.0.0",
     "homebridge": ">=1.6.0"
