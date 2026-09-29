@@ -24,4 +24,11 @@ jobs:
       # npm is older, so it must be upgraded explicitly before publishing.
       - run: npm install -g npm@^11
 
+      # setup-node's registry-url option always writes a `_authToken=...`
+      # line to .npmrc, even with no real NODE_AUTH_TOKEN secret configured.
+      # npm treats that line's mere presence as "classic auth is configured"
+      # and skips the OIDC exchange entirely, so it must be stripped for
+      # trusted publishing to actually kick in.
+      - run: sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+
       - run: npm publish
