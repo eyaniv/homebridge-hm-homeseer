@@ -44,4 +44,9 @@ jobs:
           echo "ACTIONS_ID_TOKEN_REQUEST_URL set: $([ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && echo yes || echo no)"
           cat "$NPM_CONFIG_USERCONFIG"
 
-      - run: npm publish --loglevel silly
+      # This Trusted Publisher only grants "npm stage publish" permission
+      # (not direct publish), by design -- a plain `npm publish` gets
+      # 403 OIDC permission denied. Staging queues the release; a human
+      # must then run `npm stage approve <stage-id>` (or approve on
+      # npmjs.com) with their own 2FA to actually make it live.
+      - run: npm stage publish --loglevel silly
