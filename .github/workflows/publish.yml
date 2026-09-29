@@ -12,6 +12,11 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Must match the environment name registered in npm's Trusted Publisher
+    # config for this package -- npm checks the OIDC token's environment
+    # claim against it, so a mismatch (or missing environment here) fails
+    # the exchange even with an otherwise-correct Trusted Publisher entry.
+    environment: mike
     steps:
       - uses: actions/checkout@v4
 
